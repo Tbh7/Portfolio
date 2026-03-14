@@ -3662,15 +3662,14 @@ document.querySelectorAll('.skill-bar-fill').forEach(bar=>{
 
 /* ══ COMPTEUR VISITES ══ */
 (function(){
-  localStorage.removeItem('tb_portfolio_visits');
-  /* ══ COMPTEUR PARTAGÉ — CountAPI ══ */
+  /* CounterAPI — successeur de CountAPI */
   (function(){
     var el = document.getElementById('visit-count');
     if(!el) return;
-    fetch('https://api.countapi.xyz/hit/titouanbancheri-portfolio/visits')
+    fetch('https://api.counterapi.dev/v1/titouanbancheri-portfolio/visits/up')
       .then(function(r){ return r.json(); })
       .then(function(data){
-        var target = data.value || 1;
+        var target = data.count || 1;
         var c = 0;
         var s = Math.max(1, Math.ceil(target / 80));
         var t = setInterval(function(){
@@ -5313,9 +5312,9 @@ function lazyLoadModal(modalId) {
 /* ══ LIKE BUTTON ══ */
 (function(){
   var LIKE_KEY    = 'tb_portfolio_liked_v2';
-  var API_LIKES   = 'https://api.countapi.xyz/hit/titouanbancheri-portfolio/likes';
-  var API_UNLIKES = 'https://api.countapi.xyz/update/titouanbancheri-portfolio/likes?amount=-1';
-  var API_GET     = 'https://api.countapi.xyz/get/titouanbancheri-portfolio/likes';
+  var API_LIKES   = 'https://api.counterapi.dev/v1/titouanbancheri-portfolio/likes/up';
+  var API_UNLIKES = 'https://api.counterapi.dev/v1/titouanbancheri-portfolio/likes/down';
+  var API_GET     = 'https://api.counterapi.dev/v1/titouanbancheri-portfolio/likes';
 
   var liked = localStorage.getItem(LIKE_KEY) === '1';
   var count = 0;
@@ -5337,7 +5336,7 @@ function lazyLoadModal(modalId) {
   /* Charge le vrai total au démarrage */
   fetch(API_GET)
     .then(function(r){ return r.json(); })
-    .then(function(d){ count = Math.max(0, d.value || 0); render(); })
+    .then(function(d){ count = Math.max(0, d.count || 0); render(); })
     .catch(function(){ render(); });
 
   function ripple() {
@@ -5376,7 +5375,7 @@ function lazyLoadModal(modalId) {
     var url = liked ? API_LIKES : API_UNLIKES;
     fetch(url)
       .then(function(r){ return r.json(); })
-      .then(function(d){ count = Math.max(0, d.value || 0); render(); })
+      .then(function(d){ count = Math.max(0, d.count || 0); render(); })
       .catch(function(){ count = Math.max(0, count + (liked ? 1 : -1)); render(); });
 
     if (liked) { ripple(); if(window.launchConfetti) launchConfetti(btn); }

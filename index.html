@@ -4,7 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Titouan Bancheri | Portfolio</title>
-<link rel="icon" type="image/png" href="image/favicon.png">
+
+<!-- ══ SEO & Open Graph ══ -->
+<meta name="description" content="Portfolio de Titouan Bancheri — Montage vidéo, graphisme, création de contenu. Stage au FC Lorient, BUT MMI.">
+<meta name="author" content="Titouan Bancheri">
+<meta name="theme-color" content="#0d0d0d">
+
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://titouanbancheri.github.io/">
+<meta property="og:title"       content="Titouan Bancheri | Portfolio">
+<meta property="og:description" content="Montage vidéo · Graphisme · Création de contenu — Stage au FC Lorient, BUT MMI.">
+<meta property="og:image"       content="https://titouanbancheri.github.io/image/favicon.png">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"      content="fr_FR">
+
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Titouan Bancheri | Portfolio">
+<meta name="twitter:description" content="Montage vidéo · Graphisme · Création de contenu — Stage au FC Lorient, BUT MMI.">
+<meta name="twitter:image"       content="https://titouanbancheri.github.io/image/favicon.png">
+
+<link rel="icon" type="image/png" href="image/favicon.png" id="favicon-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@1,600&family=Faster+One&display=swap" rel="stylesheet">
@@ -3642,8 +3662,27 @@ document.querySelectorAll('.skill-bar-fill').forEach(bar=>{
 
 /* ══ COMPTEUR VISITES ══ */
 (function(){
-  localStorage.removeItem('tb_portfolio_visits');const key='tb_portfolio_visits';let count=1;localStorage.setItem(key,count);
-  const el=document.getElementById('visit-count');if(el){let c=0;const s=Math.ceil(count/40);const t=setInterval(()=>{c=Math.min(c+s,count);el.textContent=c.toLocaleString();if(c>=count)clearInterval(t);},30);}
+  localStorage.removeItem('tb_portfolio_visits');
+  /* ══ COMPTEUR PARTAGÉ — CountAPI ══ */
+  (function(){
+    var el = document.getElementById('visit-count');
+    if(!el) return;
+    fetch('https://api.countapi.xyz/hit/titouanbancheri-portfolio/visits')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var target = data.value || 1;
+        var c = 0;
+        var s = Math.max(1, Math.ceil(target / 80));
+        var t = setInterval(function(){
+          c = Math.min(c + s, target);
+          el.textContent = c.toLocaleString();
+          if(c >= target) clearInterval(t);
+        }, 20);
+      })
+      .catch(function(){
+        el.textContent = '—';
+      });
+  })();
 })();
 
 /* ══ TRANSITIONS PAGE ══ */
@@ -3700,6 +3739,92 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
     sections.forEach(id=>{var el=document.getElementById(id);if(el&&el.offsetTop<=sy)current=id;});
     Object.keys(navLinks).forEach(id=>navLinks[id].classList.toggle('active',id===current));
   },{passive:true});
+})();
+
+/* ══ TITRE DE PAGE DYNAMIQUE ══ */
+(function(){
+  var TITLES = {
+    '':           'Titouan Bancheri | Portfolio',
+    'fc':         'Titouan Bancheri · Stage FC Lorient',
+    'video':      'Titouan Bancheri · Montage vidéo',
+    'presence':   'Titouan Bancheri · Présence en ligne',
+    'graphisme':  'Titouan Bancheri · Graphisme',
+    'projects':   'Titouan Bancheri · Projets BUT MMI',
+    'skills':     'Titouan Bancheri · Compétences',
+    'experience': 'Titouan Bancheri · Expériences',
+    'about':      'Titouan Bancheri · À propos',
+  };
+  var sections = ['fc','video','presence','graphisme','projects','skills','experience','about'];
+  var lastSection = '';
+  window.addEventListener('scroll', function(){
+    var sy = window.scrollY + 140, current = '';
+    sections.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.offsetTop <= sy) current = id;
+    });
+    if(current !== lastSection){
+      lastSection = current;
+      document.title = TITLES[current] || TITLES[''];
+    }
+  }, {passive:true});
+})();
+
+/* ══ FAVICON ANIMÉ ══ */
+(function(){
+  var link = document.getElementById('favicon-link');
+  if(!link) return;
+  var originalHref = link.href;
+  var canvas = document.createElement('canvas');
+  canvas.width = 32; canvas.height = 32;
+  var ctx = canvas.getContext('2d');
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = 'image/favicon.png';
+
+  var isHidden = false;
+  var pulse = 0;
+  var animId = null;
+
+  document.addEventListener('visibilitychange', function(){
+    isHidden = document.hidden;
+    if(isHidden){
+      startPulse();
+      document.title = '👋 Reviens voir le portfolio !';
+    } else {
+      stopPulse();
+      document.title = 'Titouan Bancheri | Portfolio';
+      link.href = originalHref;
+    }
+  });
+
+  img.onload = function(){
+    /* Dessine le favicon de base une fois l'image chargée */
+    ctx.drawImage(img, 0, 0, 32, 32);
+    link.href = canvas.toDataURL();
+  };
+
+  function startPulse(){
+    if(animId) return;
+    function tick(){
+      pulse += 0.06;
+      var alpha = 0.5 + 0.5 * Math.sin(pulse);
+      ctx.clearRect(0,0,32,32);
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(img, 0, 0, 32, 32);
+      ctx.globalAlpha = 1;
+      link.href = canvas.toDataURL();
+      animId = requestAnimationFrame(tick);
+    }
+    animId = requestAnimationFrame(tick);
+  }
+
+  function stopPulse(){
+    if(animId){ cancelAnimationFrame(animId); animId = null; }
+    ctx.clearRect(0,0,32,32);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(img, 0, 0, 32, 32);
+    link.href = canvas.toDataURL();
+  }
 })();
 
 /* ══ TILT 3D GRAPH CARDS ══ */
@@ -5187,15 +5312,18 @@ function lazyLoadModal(modalId) {
 })();
 /* ══ LIKE BUTTON ══ */
 (function(){
-  var KEY = 'tb_portfolio_likes';
-  localStorage.removeItem(KEY);
-  var liked = false;
+  var LIKE_KEY    = 'tb_portfolio_liked_v2';
+  var API_LIKES   = 'https://api.countapi.xyz/hit/titouanbancheri-portfolio/likes';
+  var API_UNLIKES = 'https://api.countapi.xyz/update/titouanbancheri-portfolio/likes?amount=-1';
+  var API_GET     = 'https://api.countapi.xyz/get/titouanbancheri-portfolio/likes';
+
+  var liked = localStorage.getItem(LIKE_KEY) === '1';
   var count = 0;
   var btn   = document.getElementById('like-btn');
   var cntEl = document.getElementById('like-count');
 
   function render() {
-    cntEl.textContent = count;
+    cntEl.textContent = count > 0 ? count.toLocaleString() : '';
     btn.classList.toggle('liked', liked);
     if (count > 0) {
       cntEl.classList.remove('like-count-hidden');
@@ -5205,6 +5333,12 @@ function lazyLoadModal(modalId) {
       cntEl.classList.remove('like-count-visible');
     }
   }
+
+  /* Charge le vrai total au démarrage */
+  fetch(API_GET)
+    .then(function(r){ return r.json(); })
+    .then(function(d){ count = Math.max(0, d.value || 0); render(); })
+    .catch(function(){ render(); });
 
   function ripple() {
     var rect = btn.getBoundingClientRect();
@@ -5232,18 +5366,24 @@ function lazyLoadModal(modalId) {
 
   window.toggleLike = function() {
     liked = !liked;
-    count += liked ? 1 : -1;
-    if (count < 0) count = 0;
-    localStorage.setItem(KEY, count);
+    localStorage.setItem(LIKE_KEY, liked ? '1' : '0');
+
     btn.classList.remove('pop');
     void btn.offsetWidth;
     btn.classList.add('pop');
     btn.addEventListener('animationend', function(){ btn.classList.remove('pop'); }, { once: true });
+
+    var url = liked ? API_LIKES : API_UNLIKES;
+    fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(d){ count = Math.max(0, d.value || 0); render(); })
+      .catch(function(){ count = Math.max(0, count + (liked ? 1 : -1)); render(); });
+
     if (liked) { ripple(); if(window.launchConfetti) launchConfetti(btn); }
     render();
   };
 
-  // Reveal like zone with scroll
+  /* Reveal like zone with scroll */
   var zone = document.getElementById('like-zone');
   if (zone) {
     var obs = new IntersectionObserver(function(entries){

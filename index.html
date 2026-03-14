@@ -2355,7 +2355,7 @@ body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rg
     <div id="fcv-carousel">
       <div id="fcv-main">
         <div id="fcv-main-inner">
-          <iframe id="fcv-player" frameborder="0" allowfullscreen allow="autoplay; encrypted-media; fullscreen" style="width:100%;height:100%;border:none;display:block;"></iframe>
+          <div id="fcv-player"></div>
           <div id="fcv-overlay"></div>
           <div id="fcv-info">
             <span id="fcv-tag">FC Lorient · Vidéo</span>
@@ -3700,7 +3700,7 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
   });
 })();
 
-/* ══ CARROUSEL FC LORIENT VIDÉO ══ */
+/* ══ CARROUSEL FC LORIENT VIDÉO — YouTube IFrame API ══ */
 (function(){
   var VIDEOS = [
     { id:'dBaoz3y0fvg', short:true,  title:'Présentation Abdoulaye Faye',  desc:'Vidéo d\'accueil pour l\'arrivée du joueur lors du mercato d\'été.' },
@@ -3713,19 +3713,20 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
   ];
 
   var idx      = 0;
-  var player   = document.getElementById('fcv-player');
+  var ytPlayer = null;
+  var apiReady = false;
   var titleEl  = document.getElementById('fcv-title');
   var descEl   = document.getElementById('fcv-desc');
   var counter  = document.getElementById('fcv-counter');
   var thumbsEl = document.getElementById('fcv-thumbs');
 
-  /* Masquer les contrôles incompatibles avec YouTube iframe */
+  /* Masquer les contrôles custom incompatibles */
   ['fcv-play-btn','fcv-mute-btn','fcv-progress-wrap'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
 
-  /* ── Miniatures avec thumbnails YouTube ── */
+  /* ── Miniatures ── */
   VIDEOS.forEach(function(v, i) {
     var th  = document.createElement('div');
     th.className = 'fcv-thumb';
@@ -3742,10 +3743,6 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
     thumbsEl.appendChild(th);
   });
 
-  function embedURL(v) {
-    return 'https://www.youtube.com/embed/' + v.id + '?rel=0&modestbranding=1';
-  }
-
   function refreshUI() {
     counter.textContent = (idx + 1) + ' / ' + VIDEOS.length;
     titleEl.textContent = VIDEOS[idx].title;
@@ -3755,41 +3752,86 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
     });
     var active = thumbsEl.querySelectorAll('.fcv-thumb')[idx];
     if (active) active.scrollIntoView({ behavior:'instant', block:'nearest', inline:'center' });
+    /* aspect ratio */
+    var inner = document.getElementById('fcv-main-inner');
+    inner.style.aspectRatio = VIDEOS[idx].short ? '9/16' : '16/9';
+    inner.style.maxWidth    = VIDEOS[idx].short ? '440px' : '100%';
+    inner.style.margin      = VIDEOS[idx].short ? '0 auto' : '0';
   }
 
   function go(newIdx) {
     idx = (newIdx + VIDEOS.length) % VIDEOS.length;
-    player.style.transition = 'opacity 0.25s ease';
-    player.style.opacity    = '0';
-    setTimeout(function() {
-      player.src = embedURL(VIDEOS[idx]);
-      var inner  = document.getElementById('fcv-main-inner');
-      inner.style.aspectRatio = VIDEOS[idx].short ? '9/16' : '16/9';
-      inner.style.maxWidth    = VIDEOS[idx].short ? '440px' : '100%';
-      inner.style.margin      = VIDEOS[idx].short ? '0 auto' : '0';
-      refreshUI();
-      player.style.opacity = '1';
-    }, 250);
+    refreshUI();
+    if (ytPlayer && apiReady) {
+      ytPlayer.loadVideoById(VIDEOS[idx].id);
+      ytPlayer.mute();
+      ytPlayer.playVideo();
+    }
   }
 
   window.fcvIndex = idx;
   window.fcvGoTo  = function(i) { go(i); window.fcvIndex = idx; };
 
-  /* Fullscreen sur l'iframe */
+  /* ── Pause/reprise automatique au scroll ── */
+  var inner = document.getElementById('fcv-main-inner');
+  var scrollObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (!ytPlayer || !apiReady) return;
+      try {
+        if (e.isIntersecting) {
+          ytPlayer.playVideo();
+        } else {
+          ytPlayer.pauseVideo();
+        }
+      } catch(err) {}
+    });
+  }, { threshold: 0.3 });
+  scrollObs.observe(inner);
+
+  /* Fullscreen */
   window.fcvFullscreen = function() {
-    var el = document.getElementById('fcv-player');
-    if      (el.requestFullscreen)       el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
-    else if (el.msRequestFullscreen)     el.msRequestFullscreen();
+    var iframe = document.querySelector('#fcv-player iframe');
+    if (!iframe) return;
+    if      (iframe.requestFullscreen)       iframe.requestFullscreen();
+    else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+    else if (iframe.mozRequestFullScreen)    iframe.mozRequestFullScreen();
+    else if (iframe.msRequestFullscreen)     iframe.msRequestFullscreen();
   };
 
-  /* Fonctions neutralisées (plus de <video>) */
+  /* Neutraliser les anciens contrôles */
   window.fcvToggleMute = function() {};
   window.fcvTogglePlay = function() {};
   window.fcvSeek       = function() {};
 
-  setTimeout(function(){ go(0); }, 100);
+  /* ── Charger l'API YouTube IFrame ── */
+  var tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+
+  /* Callback global appelé par l'API quand elle est prête */
+  var _prevOnYTReady = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = function() {
+    if (_prevOnYTReady) _prevOnYTReady();
+    refreshUI();
+    ytPlayer = new YT.Player('fcv-player', {
+      videoId: VIDEOS[idx].id,
+      playerVars: {
+        autoplay:       1,
+        mute:           1,
+        controls:       1,
+        rel:            0,
+        modestbranding: 1,
+        playsinline:    1
+      },
+      events: {
+        onReady: function(e) {
+          apiReady = true;
+          e.target.mute();
+          e.target.playVideo();
+        }
+      }
+    });
+  };
 })();
 
 /* ══ INSTAGRAM CARROUSSELS ══ */

@@ -2355,7 +2355,7 @@ body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rg
     <div id="fcv-carousel">
       <div id="fcv-main">
         <div id="fcv-main-inner">
-          <video id="fcv-player" muted loop playsinline></video>
+          <iframe id="fcv-player" frameborder="0" allowfullscreen allow="autoplay; encrypted-media; fullscreen" style="width:100%;height:100%;border:none;display:block;"></iframe>
           <div id="fcv-overlay"></div>
           <div id="fcv-info">
             <span id="fcv-tag">FC Lorient · Vidéo</span>
@@ -3703,13 +3703,13 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
 /* ══ CARROUSEL FC LORIENT VIDÉO ══ */
 (function(){
   var VIDEOS = [
-    { src:'lorient/video/faye.mp4',    v:true,  title:'Présentation Abdoulaye Faye',  desc:'Vidéo d\'accueil pour l\'arrivée du joueur lors du mercato d\'été.' },
-    { src:'lorient/video/fleury.mp4',  v:true,  title:'FC Lorient vs FC Fleury 92',    desc:'Résumé du match amical de préparation contre le FC Fleury 92.' },
-    { src:'lorient/video/dinard.mp4',  v:true,  title:'Stage à Dinard',                desc:'Résumé d\'un entraînement en déplacement des joueurs à Dinard.' },
-    { src:'lorient/video/media.mp4',   v:true,  title:'Média Day',                     desc:'Vidéo immersive de la journée officielle médias du club.' },
-    { src:'lorient/video/rennes.mp4',  v:true,  title:'FCL vs Rennes — J1 Ligue 1',    desc:'Résumé court de la 1ère journée de Ligue 1 face au Stade Rennais.' },
-    { src:'lorient/video/gant.mp4',    v:true,  title:'Nouveaux gants de gardien',     desc:'Présentation des nouveaux gants et réactions des joueurs.' },
-    { src:'lorient/video/kickoff.mp4', v:false, title:'Soirée Kick-Off',               desc:'Résumé de la soirée de lancement de saison avec les invités d\'honneur.' }
+    { id:'dBaoz3y0fvg', short:true,  title:'Présentation Abdoulaye Faye',  desc:'Vidéo d\'accueil pour l\'arrivée du joueur lors du mercato d\'été.' },
+    { id:'bdEAZNEy2wU', short:true,  title:'FC Lorient vs FC Fleury 92',    desc:'Résumé du match amical de préparation contre le FC Fleury 92.' },
+    { id:'XJv-QsBakWU', short:true,  title:'Stage à Dinard',                desc:'Résumé d\'un entraînement en déplacement des joueurs à Dinard.' },
+    { id:'_vPgbOOWzcI', short:true,  title:'Média Day',                     desc:'Vidéo immersive de la journée officielle médias du club.' },
+    { id:'N0vNEwocCbw', short:true,  title:'FCL vs Rennes — J1 Ligue 1',    desc:'Résumé court de la 1ère journée de Ligue 1 face au Stade Rennais.' },
+    { id:'tLna9HfMPcM', short:true,  title:'Nouveaux gants de gardien',     desc:'Présentation des nouveaux gants et réactions des joueurs.' },
+    { id:'J_f0kbkEJ2c', short:false, title:'Soirée Kick-Off',               desc:'Résumé de la soirée de lancement de saison avec les invités d\'honneur.' }
   ];
 
   var idx      = 0;
@@ -3717,31 +3717,34 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
   var titleEl  = document.getElementById('fcv-title');
   var descEl   = document.getElementById('fcv-desc');
   var counter  = document.getElementById('fcv-counter');
-  var progFill = document.getElementById('fcv-progress-fill');
-  var playBtn  = document.getElementById('fcv-play-btn');
-  var playIcon = document.getElementById('fcv-play-icon');
   var thumbsEl = document.getElementById('fcv-thumbs');
 
-  /* ── Miniatures ── */
+  /* Masquer les contrôles incompatibles avec YouTube iframe */
+  ['fcv-play-btn','fcv-mute-btn','fcv-progress-wrap'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+
+  /* ── Miniatures avec thumbnails YouTube ── */
   VIDEOS.forEach(function(v, i) {
-    var th    = document.createElement('div');
+    var th  = document.createElement('div');
     th.className = 'fcv-thumb';
-    var tv = document.createElement('video');
-    tv.src     = v.src;
-    tv.muted   = true;
-    tv.preload = 'metadata';
-    tv.playsInline = true;
-    tv.addEventListener('loadedmetadata', function() {
-      tv.currentTime = Math.min(2, tv.duration * 0.1);
-    });
+    var img = document.createElement('img');
+    img.src   = 'https://img.youtube.com/vi/' + v.id + '/mqdefault.jpg';
+    img.alt   = v.title;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     var lbl = document.createElement('div');
     lbl.className   = 'fcv-thumb-label';
     lbl.textContent = v.title;
-    th.appendChild(tv);
+    th.appendChild(img);
     th.appendChild(lbl);
     th.addEventListener('click', function() { go(i); });
     thumbsEl.appendChild(th);
   });
+
+  function embedURL(v) {
+    return 'https://www.youtube.com/embed/' + v.id + '?rel=0&modestbranding=1';
+  }
 
   function refreshUI() {
     counter.textContent = (idx + 1) + ' / ' + VIDEOS.length;
@@ -3759,100 +3762,32 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
     player.style.transition = 'opacity 0.25s ease';
     player.style.opacity    = '0';
     setTimeout(function() {
-      player.pause();
-      player.src      = VIDEOS[idx].src;
-      player.muted    = window._fcvMuted !== undefined ? window._fcvMuted : true;
-      player.preload  = 'auto';
+      player.src = embedURL(VIDEOS[idx]);
+      var inner  = document.getElementById('fcv-main-inner');
+      inner.style.aspectRatio = VIDEOS[idx].short ? '9/16' : '16/9';
+      inner.style.maxWidth    = VIDEOS[idx].short ? '440px' : '100%';
+      inner.style.margin      = VIDEOS[idx].short ? '0 auto' : '0';
       refreshUI();
-      progFill.style.width = '0%';
-      var inner = document.getElementById('fcv-main-inner');
-      inner.style.aspectRatio = VIDEOS[idx].v ? '9/16' : '16/9';
-      inner.style.maxWidth    = VIDEOS[idx].v ? '440px' : '100%';
-      inner.style.margin      = VIDEOS[idx].v ? '0 auto' : '0';
-      player.load();
-      var onCanPlay = function() {
-        player.removeEventListener('canplay', onCanPlay);
-        player.style.opacity = '1';
-        player.currentTime = 0;
-        player.play().then(function() {
-          playBtn.classList.add('playing');
-          playIcon.innerHTML = '&#9646;&#9646;';
-        }).catch(function() {
-          playBtn.classList.remove('playing');
-          playIcon.innerHTML = '&#9654;';
-          player.style.opacity = '1';
-        });
-      };
-      player.addEventListener('canplay', onCanPlay);
-      setTimeout(function() {
-        if (player.style.opacity !== '1') player.style.opacity = '1';
-      }, 2000);
+      player.style.opacity = '1';
     }, 250);
   }
 
   window.fcvIndex = idx;
   window.fcvGoTo  = function(i) { go(i); window.fcvIndex = idx; };
 
-  window.fcvToggleMute = function() {
-    player.muted = !player.muted;
-    window._fcvMuted = player.muted;
-    updateMuteBtn();
-  };
-
-  function updateMuteBtn() {
-    var btn = document.getElementById('fcv-mute-btn');
-    if(!btn) return;
-    if(player.muted) {
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
-      btn.setAttribute('title','Activer le son');
-      btn.classList.remove('unmuted');
-    } else {
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-      btn.setAttribute('title','Couper le son');
-      btn.classList.add('unmuted');
-    }
-  }
-
-  window._fcvMuted = true;
-  updateMuteBtn();
-
-  window.fcvTogglePlay = function() {
-    if (player.paused) {
-      player.play();
-      playBtn.classList.add('playing');
-      playIcon.innerHTML = '&#9646;&#9646;';
-    } else {
-      player.pause();
-      playBtn.classList.remove('playing');
-      playIcon.innerHTML = '&#9654;';
-    }
-  };
-
-  window.fcvSeek = function(e) {
-    var bar = document.getElementById('fcv-progress-bar');
-    var rect = bar.getBoundingClientRect();
-    var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    if (player.duration) player.currentTime = ratio * player.duration;
-  };
-
+  /* Fullscreen sur l'iframe */
   window.fcvFullscreen = function() {
     var el = document.getElementById('fcv-player');
-    var wrap = document.getElementById('fcv-main-inner');
-    // iOS Safari: use webkitEnterFullscreen on the video element
-    if (el.webkitEnterFullscreen)        el.webkitEnterFullscreen();
-    else if (el.requestFullscreen)       el.requestFullscreen();
+    if      (el.requestFullscreen)       el.requestFullscreen();
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
     else if (el.msRequestFullscreen)     el.msRequestFullscreen();
-    // Android fallback: fullscreen on wrapper
-    else if (wrap.requestFullscreen)     wrap.requestFullscreen();
   };
 
-  player.addEventListener('timeupdate', function() {
-    if (player.duration) progFill.style.width = (player.currentTime / player.duration * 100) + '%';
-  });
-
-  player.addEventListener('ended', function() { go(idx + 1); });
+  /* Fonctions neutralisées (plus de <video>) */
+  window.fcvToggleMute = function() {};
+  window.fcvTogglePlay = function() {};
+  window.fcvSeek       = function() {};
 
   setTimeout(function(){ go(0); }, 100);
 })();

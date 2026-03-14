@@ -2755,7 +2755,7 @@ body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rg
   <div id="video-carousel-counter"></div>
   <div id="video-carousel-stage">
     <div class="vc-arrow" id="vc-prev" onclick="vcPrev(event)">&#10094;</div>
-    <div id="video-carousel-wrap"><iframe id="video-carousel-player" frameborder="0" allowfullscreen allow="autoplay; encrypted-media; fullscreen" style="width:100%;max-height:62vh;border-radius:10px;aspect-ratio:16/9;border:none;background:#000;"></iframe></div>
+    <div id="video-carousel-wrap"><div id="video-carousel-player" style="width:100%;max-height:62vh;border-radius:10px;aspect-ratio:16/9;background:#000;"></div></div>
     <div class="vc-arrow" id="vc-next" onclick="vcNext(event)">&#10095;</div>
   </div>
   <p id="video-carousel-caption"></p>
@@ -3447,44 +3447,98 @@ let currentIndex = 0;
 })();
 
 /* ══ CARROUSEL VIDÉO CLIENT ══ */
-const videoSources=["https://www.youtube.com/embed/HeePQDLb954?modestbranding=1&rel=0","https://www.youtube.com/embed/8GrIhbFaKd8?modestbranding=1&rel=0","https://www.youtube.com/embed/M9vIG1LhxDU?modestbranding=1&rel=0"];
+const videoSources=["HeePQDLb954","8GrIhbFaKd8","M9vIG1LhxDU"];
 const videoCaptions=["Vidéo Client 1","Vidéo Client 2","Vidéo Client 3"];
 const videoThumbs=["image/miniature1.jpg","image/miniature2.jpg","image/miniature3.jpg"];
 let currentVideoIndex=0;
 
 (function(){
-  var C=document.getElementById('video-carousel'),player=document.getElementById('video-carousel-player'),
-      cap=document.getElementById('video-carousel-caption'),ctr=document.getElementById('video-carousel-counter'),
-      th=document.getElementById('video-carousel-thumbs');
+  var C   = document.getElementById('video-carousel');
+  var cap = document.getElementById('video-carousel-caption');
+  var ctr = document.getElementById('video-carousel-counter');
+  var th  = document.getElementById('video-carousel-thumbs');
+  var vcPlayer = null;
+  var vcApiReady = false;
+
   videoThumbs.forEach(function(src,i){
     var t=document.createElement('img');t.src=src;t.className='vc-thumb';
-    t.addEventListener('click',function(e){e.stopPropagation();vcGoTo(i);});th.appendChild(t);
+    t.addEventListener('click',function(e){e.stopPropagation();vcGoTo(i);});
+    th.appendChild(t);
   });
+
   function updateUI(){
-    ctr.textContent=(currentVideoIndex+1)+' / '+videoSources.length;cap.textContent=videoCaptions[currentVideoIndex];
+    ctr.textContent=(currentVideoIndex+1)+' / '+videoSources.length;
+    cap.textContent=videoCaptions[currentVideoIndex];
     th.querySelectorAll('.vc-thumb').forEach(function(t,i){t.classList.toggle('active',i===currentVideoIndex);});
   }
-  window.vcGoTo=function(idx){
-    player.src='';currentVideoIndex=(idx+videoSources.length)%videoSources.length;
-    player.src=videoSources[currentVideoIndex];updateUI();
+
+  function loadAndPlay(idx) {
+    if (vcPlayer && vcApiReady) {
+      vcPlayer.loadVideoById(videoSources[idx]);
+      vcPlayer.playVideo();
+    }
+  }
+
+  window.vcGoTo = function(idx){
+    currentVideoIndex = (idx + videoSources.length) % videoSources.length;
+    updateUI();
+    loadAndPlay(currentVideoIndex);
   };
-  window.openVideoLightbox=function(src,idx){
-    currentVideoIndex=idx;C.classList.add('open');document.body.style.overflow='hidden';
-    player.src=videoSources[idx];player.style.opacity='1';updateUI();
+
+  window.openVideoLightbox = function(src, idx){
+    currentVideoIndex = idx;
+    C.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    updateUI();
+    if (vcPlayer && vcApiReady) {
+      loadAndPlay(idx);
+    } else {
+      /* API pas encore prête — on attend */
+      var wait = setInterval(function(){
+        if (vcApiReady) { clearInterval(wait); loadAndPlay(idx); }
+      }, 100);
+    }
   };
-  window.closeVideoCarousel=function(){player.src='';C.classList.remove('open');document.body.style.overflow='';};
-  window.videoCarouselBgClick=function(e){if(e.target===C)closeVideoCarousel();};
-  window.vcPrev=function(e){e.stopPropagation();vcGoTo(currentVideoIndex-1);};
-  window.vcNext=function(e){e.stopPropagation();vcGoTo(currentVideoIndex+1);};
+
+  window.closeVideoCarousel = function(){
+    if (vcPlayer && vcApiReady) try { vcPlayer.stopVideo(); } catch(e){}
+    C.classList.remove('open');
+    document.body.style.overflow='';
+  };
+
+  window.videoCarouselBgClick = function(e){ if(e.target===C) closeVideoCarousel(); };
+  window.vcPrev = function(e){ e.stopPropagation(); vcGoTo(currentVideoIndex-1); };
+  window.vcNext = function(e){ e.stopPropagation(); vcGoTo(currentVideoIndex+1); };
+
   document.addEventListener('keydown',function(e){
     if(!C.classList.contains('open'))return;
-    if(e.key==='ArrowLeft')vcGoTo(currentVideoIndex-1);
-    if(e.key==='ArrowRight')vcGoTo(currentVideoIndex+1);
-    if(e.key==='Escape')closeVideoCarousel();
+    if(e.key==='ArrowLeft')  vcGoTo(currentVideoIndex-1);
+    if(e.key==='ArrowRight') vcGoTo(currentVideoIndex+1);
+    if(e.key==='Escape')     closeVideoCarousel();
   });
   var tx=0;
   C.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
   C.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?vcGoTo(currentVideoIndex+1):vcGoTo(currentVideoIndex-1);}});
+
+  /* ── Init YT Player (l'API est déjà chargée par le carrousel FC Lorient) ── */
+  function initVcPlayer() {
+    vcPlayer = new YT.Player('video-carousel-player', {
+      videoId: videoSources[0],
+      playerVars: { autoplay:0, controls:1, rel:0, modestbranding:1, playsinline:1 },
+      events: {
+        onReady: function(){ vcApiReady = true; }
+      }
+    });
+  }
+
+  /* L'API YouTube est chargée une seule fois — on patche onYouTubeIframeAPIReady */
+  var _prev = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = function(){
+    if (_prev) _prev();
+    initVcPlayer();
+  };
+  /* Si l'API est déjà prête quand ce code s'exécute */
+  if (window.YT && window.YT.Player) initVcPlayer();
 })();
 
 /* ══ MODAL PROJECT 3 ══ */

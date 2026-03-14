@@ -1923,7 +1923,6 @@ body.nuit-de-match #cursor-dot {
 .tilt-shine { position:absolute; inset:0; border-radius:12px; pointer-events:none; z-index:2; opacity:0; background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.12),transparent 65%); transition:opacity 0.2s ease; }
 .graph-card:hover .tilt-shine { opacity:1; }
 
-/* ══ CV BTN ══ */
 #cv-btn { position:fixed; bottom:36px; right:36px; z-index:9000; display:flex; align-items:center; gap:10px; padding:13px 22px; border-radius:50px; border:1.5px solid rgba(160,177,187,0.35); background:rgba(13,13,13,0.75); backdrop-filter:blur(12px); color:var(--white); font-size:13px; letter-spacing:1.5px; text-transform:uppercase; font-family:"Helvetica Neue",sans-serif; opacity:0; transform:translateY(20px); animation:cvBtnIn 0.7s cubic-bezier(0.22,1,0.36,1) 1.2s forwards; transition:border-color 0.3s,box-shadow 0.3s,background 0.3s,transform 0.3s cubic-bezier(0.22,1,0.36,1); }
 #cv-btn:hover { border-color:var(--red); background:rgba(20,20,20,0.9); box-shadow:0 0 25px rgba(160,177,187,0.2),0 8px 30px rgba(0,0,0,0.5); transform:translateY(-3px); }
 #cv-btn .cv-icon { font-size:16px; line-height:1; }
@@ -1940,8 +1939,8 @@ body.nuit-de-match #cursor-dot {
 
 /* ══ CURSEUR ══ */
 * { cursor:none !important; }
-#cursor-dot { position:fixed; top:0; left:0; width:5px; height:5px; background:white; border-radius:50%; pointer-events:none; z-index:99999; transition:width 0.15s,height 0.15s,background 0.15s; }
-#cursor-ring { position:fixed; top:0; left:0; width:26px; height:26px; border:1px solid rgba(255,255,255,0.5); border-radius:50%; pointer-events:none; z-index:99998; transition:width 0.3s cubic-bezier(0.22,1,0.36,1),height 0.3s cubic-bezier(0.22,1,0.36,1),border-color 0.25s,left 0s,top 0s; }
+#cursor-dot { position:fixed; top:-100px; left:-100px; width:5px; height:5px; background:white; border-radius:50%; pointer-events:none; z-index:99999; transition:width 0.15s,height 0.15s,background 0.15s; }
+#cursor-ring { position:fixed; top:-100px; left:-100px; width:26px; height:26px; border:1px solid rgba(255,255,255,0.5); border-radius:50%; pointer-events:none; z-index:99998; transition:width 0.3s cubic-bezier(0.22,1,0.36,1),height 0.3s cubic-bezier(0.22,1,0.36,1),border-color 0.25s,left 0s,top 0s; }
 #cursor-trail { position:fixed; inset:0; pointer-events:none; z-index:99997; }
 body.cursor-hover #cursor-dot { width:12px; height:12px; background:var(--red); }
 body.cursor-hover #cursor-ring { width:42px; height:42px; border-color:var(--red); opacity:0.7; }
@@ -2173,6 +2172,7 @@ body.cursor-magnetic #cursor-ring { width:48px; height:48px; border-color:rgba(1
 /* ════════════════════════════════════════════════════
    RESPONSIVE — MOBILE (max 600px)
 ════════════════════════════════════════════════════ */
+#nav-hamburger { display: none; }
 @media (max-width: 600px) {
 
   /* Nav — hamburger zone */
@@ -2291,10 +2291,41 @@ body.cursor-magnetic #cursor-ring { width:48px; height:48px; border-color:rgba(1
   .pnc-number { font-size: 34px; }
 }
 
-#nav-hamburger { display: none; }
-@media (max-width: 600px) { #nav-hamburger { display: flex; } }
+
 /* chess-mode hero name */
 body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rgba(118,150,86,0.4); }
+
+/* ══ MUSIC BUTTON ══ */
+#music-btn {
+  position: fixed; bottom: 90px; left: 36px;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1.5px solid rgba(160,177,187,0.3);
+  background: rgba(13,13,13,0.75); backdrop-filter: blur(12px);
+  color: var(--white); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9000; opacity: 0;
+  animation: musicBtnIn 0.7s cubic-bezier(0.22,1,0.36,1) 1.5s forwards;
+  transition: border-color 0.35s, box-shadow 0.35s, background 0.35s, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes musicBtnIn { to { opacity:1; pointer-events:all; } }
+#music-btn:hover {
+  border-color: var(--red);
+  background: rgba(160,177,187,0.1);
+  box-shadow: 0 0 0 6px rgba(160,177,187,0.07), 0 0 24px rgba(160,177,187,0.25);
+  transform: rotate(20deg) scale(1.15);
+}
+#music-btn.playing { border-color: rgba(160,177,187,0.55); background: rgba(160,177,187,0.07); }
+#music-icon { transition: opacity 0.2s; }
+#music-btn.playing #music-icon { opacity: 0; position: absolute; }
+#music-bars { display: none; align-items: flex-end; gap: 3px; height: 16px; }
+#music-btn.playing #music-bars { display: flex; }
+#music-bars span { display: block; width: 3px; border-radius: 2px; background: var(--red); }
+#music-btn.playing #music-bars span:nth-child(1) { animation: eq1 0.7s ease-in-out infinite alternate; }
+#music-btn.playing #music-bars span:nth-child(2) { animation: eq2 0.5s ease-in-out infinite alternate; }
+#music-btn.playing #music-bars span:nth-child(3) { animation: eq3 0.9s ease-in-out infinite alternate; }
+@keyframes eq1 { from{height:4px}  to{height:14px} }
+@keyframes eq2 { from{height:10px} to{height:5px}  }
+@keyframes eq3 { from{height:7px}  to{height:13px} }
 </style>
 </head>
 <body>
@@ -2308,7 +2339,6 @@ body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rg
     <li><a href="#video">Montage client</a></li>
     <li><a href="#presence">Ma présence en ligne</a></li>
     <li><a href="#graphisme">Graphisme</a></li>
-    
     <li><a href="#projects">Projets et réalisations</a></li>
     <li><a href="#skills">Compétences</a></li>
     <li><a href="#experience">Expériences</a></li>
@@ -2913,6 +2943,12 @@ body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rg
   <div class="visit-counter">👁 <span id="visit-count">—</span> visites</div>
 </footer>
 
+<!-- ══ MUSIC ══ -->
+<audio id="bg-music" src="audio/musique.mp3" loop preload="none"></audio>
+<button id="music-btn" onclick="toggleMusic()" aria-label="Musique">
+  <span id="music-icon">♪</span>
+  <span id="music-bars"><span></span><span></span><span></span></span>
+</button>
 
 <!-- ══ EASTER EGG HINT ══ -->
 <button id="egg-hint-btn" aria-label="Secrets">✦</button>
@@ -2946,6 +2982,7 @@ body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rg
 
 <div id="scroll-progress"></div>
 <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
 
 <button id="cv-btn" onclick="openCvModal()">
   <span class="cv-icon">📄</span> Mon CV
@@ -3560,6 +3597,13 @@ let currentVideoIndex=0;
             iframe.removeAttribute('height');
             iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
           }
+        },
+        onStateChange: function(e) {
+          if (e.data === 1) {
+            if (window._musicPauseForVideo) window._musicPauseForVideo();
+          } else if (e.data === 0 || e.data === 2) {
+            if (window._musicResumeAfterVideo) window._musicResumeAfterVideo();
+          }
         }
       }
     });
@@ -3725,6 +3769,38 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
 
 /* ══ RETOUR EN HAUT ══ */
 (function(){var btn=document.getElementById('back-to-top');window.addEventListener('scroll',function(){btn.classList.toggle('visible',window.scrollY>400);},{passive:true});})();
+
+/* ══ MUSIC PLAYER ══ */
+(function(){
+  var audio = document.getElementById('bg-music');
+  var btn   = document.getElementById('music-btn');
+  if(!audio || !btn) return;
+  var playing = false;
+  audio.volume = 0.03;
+
+  window.toggleMusic = function() {
+    if (!playing) {
+      audio.play().then(function(){
+        playing = true;
+        btn.classList.add('playing');
+      }).catch(function(){});
+    } else {
+      var vol = audio.volume;
+      var fade = setInterval(function(){
+        vol = Math.max(0, +(vol - 0.02).toFixed(3));
+        audio.volume = vol;
+        if(vol <= 0){
+          clearInterval(fade);
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = 0.03;
+          playing = false;
+          btn.classList.remove('playing');
+        }
+      }, 40);
+    }
+  };
+})();
 
 /* ══ SCROLL INDICATOR ══ */
 (function(){const ind=document.getElementById('scroll-indicator');window.addEventListener('scroll',function(){ind.classList.toggle('hidden',window.scrollY>window.innerHeight*0.4);},{passive:true});})();
@@ -4042,6 +4118,13 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
           document.addEventListener('click',     unmuteOnce);
           document.addEventListener('touchstart', unmuteOnce, { passive: true });
           document.addEventListener('keydown',   unmuteOnce);
+        },
+        onStateChange: function(e) {
+          if (e.data === 1) { /* playing */
+            if (window._musicPauseForVideo) window._musicPauseForVideo();
+          } else if (e.data === 0 || e.data === 2) { /* ended or paused */
+            if (window._musicResumeAfterVideo) window._musicResumeAfterVideo();
+          }
         }
       }
     });
@@ -5464,6 +5547,8 @@ function lazyLoadModal(modalId) {
     spawn(cx, cy, 90);
   };
 })();
+
+
 
 
 </script>

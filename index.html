@@ -2300,6 +2300,41 @@ body.cursor-magnetic #cursor-ring { width:48px; height:48px; border-color:rgba(1
 /* chess-mode hero name */
 body.chess-mode #hero-last { color: #769656 !important; text-shadow: 0 0 20px rgba(118,150,86,0.4); }
 
+/* ══ SKELETON LOADING ══ */
+@keyframes skeletonPulse {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+  background-size: 800px 100%;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+/* S'applique avant que l'image soit chargée */
+.graph-card img:not([src]),
+.graph-card img[src=""],
+.video-card img:not([src]),
+.video-card img[src=""],
+.affiche-card img:not([src]),
+.affiche-card img[src=""],
+.bonus-img-wrap img:not([src]),
+.bonus-img-wrap img[src=""],
+.interne-grid-img:not([src]),
+.interne-grid-img[src=""],
+.igc-preview-strip img:not([src]),
+.igc-preview-strip img[src=""] {
+  background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+  background-size: 800px 100%;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+img.img-loading {
+  background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+  background-size: 800px 100%;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+  color: transparent;
+}
+img.img-loaded { animation: none; background: none; }
+
 /* ══ MUSIC BUTTON ══ */
 #music-btn {
   position: fixed; bottom: 90px; left: 36px;
@@ -3778,6 +3813,23 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
 /* ══ RETOUR EN HAUT ══ */
 (function(){var btn=document.getElementById('back-to-top');window.addEventListener('scroll',function(){btn.classList.toggle('visible',window.scrollY>400);},{passive:true});})();
 
+/* ══ SKELETON LOADING ══ */
+(function(){
+  function applySkeletons(root) {
+    (root || document).querySelectorAll('img[loading="lazy"]').forEach(function(img) {
+      if (!img.complete || !img.naturalWidth) {
+        img.classList.add('img-loading');
+        img.addEventListener('load',  function() { img.classList.remove('img-loading'); img.classList.add('img-loaded'); });
+        img.addEventListener('error', function() { img.classList.remove('img-loading'); });
+      }
+    });
+  }
+  /* Au chargement de la page */
+  document.addEventListener('DOMContentLoaded', function() { applySkeletons(); });
+  /* Expose pour les modals qui injectent des images dynamiquement */
+  window.applySkeletons = applySkeletons;
+})();
+
 /* ══ MUSIC PLAYER ══ */
 (function(){
   var audio = document.getElementById('bg-music');
@@ -4505,6 +4557,7 @@ window.openInterneModal = function() {
   document.getElementById('interne-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
   lazyLoadModal('interne-modal');
+  if (window.applySkeletons) applySkeletons(document.getElementById('interne-modal'));
 };
 window.closeInterneModal = function() {
   document.getElementById('interne-modal').classList.remove('open');
@@ -4517,6 +4570,7 @@ window.openReaboModal = function() {
   document.getElementById('reabo-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
   lazyLoadModal('reabo-modal');
+  if (window.applySkeletons) applySkeletons(document.getElementById('reabo-modal'));
 };
 window.closeReaboModal = function() {
   document.getElementById('reabo-modal').classList.remove('open');

@@ -514,6 +514,7 @@ footer { text-align:center; padding:30px; font-size:12px; opacity:0.5; }
   height: 160px;
   overflow: hidden;
   flex-wrap: nowrap;
+  width: 100%;
 }
 .igc-preview-strip img {
   flex-shrink: 0;
@@ -521,8 +522,12 @@ footer { text-align:center; padding:30px; font-size:12px; opacity:0.5; }
   object-fit: cover;
   display: block;
   border-right: 1.5px solid #111;
+  transition: transform 0.6s cubic-bezier(0.22,1,0.36,1), filter 0.4s ease;
 }
 .igc-preview-strip img:last-child { border-right: none; }
+.igc-preview-card:hover .igc-preview-strip img { transform: scale(1.06); filter: brightness(1.1); }
+.igc-preview-card:hover .igc-preview-strip img:nth-child(2) { transition-delay: 0.05s; }
+.igc-preview-card:hover .igc-preview-strip img:nth-child(3) { transition-delay: 0.10s; }
 
 .igc-preview-label {
   padding: 12px 14px;
@@ -4213,75 +4218,66 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.opacity
     }
   };
 
-  /* ── Preview strips : auto-scroll px-based (no black gaps) ── */
+  /* ── Preview strips : fade simple après 1s ── */
   document.querySelectorAll('.igc-preview-card').forEach(function(card) {
     var strip = card.querySelector('.igc-preview-strip');
     var key   = card.getAttribute('onclick');
-    // Extract key — could be openIgc('x') or openCalendrier()
     var match = key.match(/openIgc\('([^']+)'\)/);
     var d     = match ? DATA[match[1]] : null;
     if (!d) return;
 
-    // Build all images — each exactly 1/3 of the card width
+    var imgs = d.images;
+
     strip.innerHTML = '';
-    d.images.forEach(function(src) {
+    for (var i = 0; i < 3; i++) {
       var img = document.createElement('img');
-      img.src = src; img.alt = ''; img.loading = 'lazy';
-      img.style.flexShrink = '0';
+      img.src = imgs[i]; img.loading = 'lazy';
+      img.style.cssText = 'flex-shrink:0;width:calc(100%/3);height:100%;object-fit:cover;display:block;border-right:1.5px solid #111;transition:opacity 0.4s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1);';
       strip.appendChild(img);
-    });
+    }
+    strip.lastChild.style.borderRight = 'none';
 
-    var offset = 0;
-    var max    = d.images.length - 3;
-    var timer  = null;
+    var hoverTimer = null, cycleTimer = null;
+    var counters = [0, 1, 2];
 
-    function imgW() {
-      // 1/3 of the strip's visible container width
-      return card.querySelector('.igc-preview-strip').offsetWidth / 3;
+    function fadeSlot(slotIdx) {
+      var img = strip.children[slotIdx];
+      if (!img) return;
+      counters[slotIdx] = (counters[slotIdx] + 3) % imgs.length;
+      img.style.opacity = '0';
+      setTimeout(function() {
+        img.src = imgs[counters[slotIdx]];
+        img.style.opacity = '1';
+      }, 400);
     }
 
-    function setOffset(o, animated) {
-      strip.style.transition = animated
-        ? 'transform 0.55s cubic-bezier(0.22,1,0.36,1)'
-        : 'none';
-      strip.style.transform = 'translateX(-' + (o * imgW()) + 'px)';
+    function startCycle() {
+      var step = 0;
+      cycleTimer = setInterval(function() {
+        fadeSlot(step % 3);
+        step++;
+      }, 700);
     }
-
-    function tick() {
-      if (offset >= max) {
-        clearInterval(timer); timer = null;
-        setTimeout(function() {
-          strip.style.transition = 'none';
-          strip.style.transform  = 'translateX(0)';
-          offset = 0;
-          if (card._hovered) startTimer();
-        }, 700);
-      } else {
-        offset++;
-        setOffset(offset, true);
-      }
-    }
-
-    function startTimer() { timer = setInterval(tick, 950); }
 
     card.addEventListener('mouseenter', function() {
-      card._hovered = true;
-      if (max <= 0) return;
-      strip.style.transition = 'none';
-      strip.style.transform  = 'translateX(0)';
-      offset = 0;
-      startTimer();
-    });
-    card.addEventListener('mouseleave', function() {
-      card._hovered = false;
-      clearInterval(timer); timer = null;
-      strip.style.transition = 'transform 0.55s cubic-bezier(0.22,1,0.36,1)';
-      strip.style.transform  = 'translateX(0)';
-      offset = 0;
+      Array.from(strip.children).forEach(function(img, i) {
+        img.style.transitionDelay = (i * 0.07) + 's';
+        img.style.transform = 'scale(1.05)';
+      });
+      hoverTimer = setTimeout(startCycle, 1000);
     });
 
-    // Init
-    strip.style.transform = 'translateX(0)';
+    card.addEventListener('mouseleave', function() {
+      clearTimeout(hoverTimer);
+      clearInterval(cycleTimer);
+      counters = [0, 1, 2];
+      Array.from(strip.children).forEach(function(img, i) {
+        img.style.transitionDelay = '0s';
+        img.style.opacity = '1';
+        img.style.transform = 'scale(1)';
+        img.src = imgs[i];
+      });
+    });
   });
 
   /* ── Modal ── */
